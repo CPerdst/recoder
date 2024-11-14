@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "recoder.h"
+#include "graber.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -33,6 +33,6 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    std::shared_ptr<recoder> recoder_;
+    std::shared_ptr<graber> recoder_;
 };
 #endif // MAINWINDOW_H

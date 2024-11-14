@@ -70,19 +70,7 @@ void video_information::setTime_base(const AVRational &time_base)
     time_base_ = time_base;
 }
 
-
-common::common()
-{
-
-}
-
-
-record_option::record_option()
-{
-
-}
-
-record_option::record_option(bool has_window,
+grab_option::grab_option(bool has_window,
                              bool has_camera,
                              bool has_audio,
                              AVRational frame_rate,
@@ -97,12 +85,7 @@ record_option::record_option(bool has_window,
     dest_window_fmt_ = w;
 }
 
-record_option::~record_option()
-{
-
-}
-
-void record_option::init(bool has_window,
+void grab_option::init(bool has_window,
                          bool has_camera,
                          bool has_audio,
                          AVRational frame_rate,
@@ -117,62 +100,211 @@ void record_option::init(bool has_window,
     dest_window_fmt_ = w;
 }
 
-bool record_option::has_window() const
+bool grab_option::has_window() const
 {
     return has_window_;
 }
 
-void record_option::setHas_window(bool has_window)
+void grab_option::setHas_window(bool has_window)
 {
     has_window_ = has_window;
 }
 
-bool record_option::has_camera() const
+bool grab_option::has_camera() const
 {
     return has_camera_;
 }
 
-void record_option::setHas_camera(bool has_camera)
+void grab_option::setHas_camera(bool has_camera)
 {
     has_camera_ = has_camera;
 }
 
-bool record_option::has_audio() const
+bool grab_option::has_audio() const
 {
     return has_audio_;
 }
 
-void record_option::setHas_audio(bool has_audio)
+void grab_option::setHas_audio(bool has_audio)
 {
     has_audio_ = has_audio;
 }
 
-AVRational record_option::getFrame_rate() const
+AVRational grab_option::getFrame_rate() const
 {
     return frame_rate_;
 }
 
-void record_option::setFrame_rate(const AVRational &value)
+void grab_option::setFrame_rate(const AVRational &value)
 {
     frame_rate_ = value;
 }
 
-AVPixelFormat record_option::getDest_camera_fmt() const
+AVPixelFormat grab_option::getDest_camera_fmt() const
 {
     return dest_camera_fmt_;
 }
 
-void record_option::setDest_camera_fmt(const AVPixelFormat &dest_camera_fmt)
+void grab_option::setDest_camera_fmt(const AVPixelFormat &dest_camera_fmt)
 {
     dest_camera_fmt_ = dest_camera_fmt;
 }
 
-AVPixelFormat record_option::getDest_window_fmt() const
+AVPixelFormat grab_option::getDest_window_fmt() const
 {
     return dest_window_fmt_;
 }
 
-void record_option::setDest_window_fmt(const AVPixelFormat &dest_window_fmt)
+void grab_option::setDest_window_fmt(const AVPixelFormat &dest_window_fmt)
 {
     dest_window_fmt_ = dest_window_fmt;
+}
+
+void show_codec_context_information(AVCodec* codec, AVCodecContext* ctx, int idx){
+    qDebug() << "----------CODEC CONTEXT INFO----------";
+    qDebug() << codec->long_name;
+    if(ctx->codec_type == AVMEDIA_TYPE_AUDIO){
+        qDebug() << "Stream:        " << idx;
+        qDebug() << "Sample Format: " << av_get_sample_fmt_name(ctx->sample_fmt);
+        qDebug() << "Sample Size:   " << av_get_bytes_per_sample(ctx->sample_fmt);
+        qDebug() << "Channels:      " << ctx->channels;
+        qDebug() << "Float Output:  " << (av_sample_fmt_is_planar(ctx->sample_fmt) ? "yes" : "no");
+        qDebug() << "Sample Rate:   " << ctx->sample_rate;
+        qDebug() << "Audio TimeBase: " << av_q2d(ctx->time_base);
+    }else if(ctx->codec_type == AVMEDIA_TYPE_VIDEO){
+        qDebug() << "Stream:        " << idx;
+        qDebug() << "Video Format: " << av_get_pix_fmt_name(ctx->pix_fmt);
+        qDebug() << "Video Height: " << ctx->height;
+        qDebug() << "Video Width: " << ctx->width;
+        qDebug() << "Video Rate: " << av_q2d(ctx->framerate);
+        qDebug() << "Video TimeBase: " << av_q2d(ctx->time_base);
+    }
+}
+
+void show_frame_information(AVFrame*  frame){
+    qDebug() << "----------FRAME INFO----------";
+    qDebug() << "frame format: " << av_get_sample_fmt_name((enum AVSampleFormat)frame->format);
+    qDebug() << "frame rate: " << frame->sample_rate;
+    qDebug() << "frame channel layout: " << frame->channel_layout;
+    qDebug() << "frame channels: " << frame->channels;
+}
+
+void framequeue::put(AVFrame *frame)
+{
+    std::unique_lock<std::mutex> lock(queue_mtx_);
+    if(frame_count_ == max_queue_size){
+        queue_cond_not_full_.wait(lock, [this](){return frame_count_ < max_queue_size;});
+    }
+    frame_queue_.push(frame);
+    frame_count_++;
+    queue_cond_not_empty_.notify_one();
+}
+
+AVFrame *framequeue::get()
+{
+    std::unique_lock<std::mutex> lock(queue_mtx_);
+    if(frame_count_ == 0){
+        queue_cond_not_empty_.wait(lock, [this](){return frame_count_ > 0;});
+    }
+    auto ele = frame_queue_.front();
+    frame_queue_.pop();
+    frame_count_--;
+    queue_cond_not_full_.notify_one();
+    return ele;
+}
+
+bool framequeue::empty()
+{
+    std::unique_lock<std::mutex> lock(queue_mtx_);
+    return frame_count_ == 0;
+}
+
+long long framequeue::getFrame_count() const
+{
+    return frame_count_;
+}
+
+void framequeue::setFrame_count(long long frame_count)
+{
+    frame_count_ = frame_count;
+}
+
+long long framequeue::getFrame_size() const
+{
+    return frame_size_;
+}
+
+void framequeue::setFrame_size(long long frame_size)
+{
+    frame_size_ = frame_size;
+}
+
+bool mux_option::has_audio() const
+{
+    return has_audio_;
+}
+
+void mux_option::setHas_audio(bool has_audio)
+{
+    has_audio_ = has_audio;
+}
+
+bool mux_option::mux_frame() const
+{
+    return mux_frame_;
+}
+
+void mux_option::setMux_frame(bool mux_frame)
+{
+    mux_frame_ = mux_frame;
+}
+
+std::string mux_option::save_file_path() const
+{
+    return save_file_path_;
+}
+
+void mux_option::setSave_file_path(const std::string &save_file_path)
+{
+    save_file_path_ = save_file_path;
+}
+
+const grab_option& mux_option::grab_option() const
+{
+    return grab_option_;
+}
+
+void mux_option::setGrab_option(const class grab_option &grab_option)
+{
+    grab_option_ = grab_option;
+}
+
+std::function<void (AVFrame *)> mux_option::video_callback() const
+{
+    return video_callback_;
+}
+
+void mux_option::setVideo_callback(const std::function<void (AVFrame *)> &video_callback)
+{
+    video_callback_ = video_callback;
+}
+
+std::function<void (AVFrame *)> mux_option::camera_callback() const
+{
+    return camera_callback_;
+}
+
+void mux_option::setCamera_callback(const std::function<void (AVFrame *)> &camera_callback)
+{
+    camera_callback_ = camera_callback;
+}
+
+std::function<void ()> mux_option::stop_callback() const
+{
+    return stop_callback_;
+}
+
+void mux_option::setStop_callback(const std::function<void ()> &stop_callback)
+{
+    stop_callback_ = stop_callback;
 }

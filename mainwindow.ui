@@ -17,7 +17,7 @@
    <widget class="QLabel" name="lb_show">
     <property name="geometry">
      <rect>
-      <x>50</x>
+      <x>20</x>
       <y>70</y>
       <width>551</width>
       <height>221</height>
@@ -59,10 +59,10 @@
    <widget class="QLabel" name="lb_show2">
     <property name="geometry">
      <rect>
-      <x>230</x>
-      <y>310</y>
-      <width>1291</width>
-      <height>831</height>
+      <x>170</x>
+      <y>30</y>
+      <width>1681</width>
+      <height>1151</height>
      </rect>
     </property>
     <property name="styleSheet">

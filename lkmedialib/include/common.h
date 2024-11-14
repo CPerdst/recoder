@@ -1,12 +1,18 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include "QDebug"
+
 extern "C"{
     #include "libavutil/pixfmt.h"
     #include "libavutil/rational.h"
     #include "libavcodec/avcodec.h"
     #include "libavutil/imgutils.h"
 }
+
+#include "queue"
+#include "mutex"
+#include "condition_variable"
 
 class video_information{
 public:
@@ -42,18 +48,25 @@ private:
     AVRational time_base_;
 };
 
-class record_option {
-public:
-    record_option();
+/**
+ * @brief The grab_option class
+ *
+ * 用于为recordr指定抓取选项
+ *
+ */
 
-    record_option(bool has_window,
+class grab_option {
+public:
+    grab_option() = default;
+
+    grab_option(bool has_window,
                   bool has_camera,
                   bool has_audio,
                   AVRational frame_rate,
                   AVPixelFormat c = AV_PIX_FMT_RGB24,
                   AVPixelFormat w = AV_PIX_FMT_RGB24);
 
-    ~record_option();
+    ~grab_option() = default;
 
     void init(bool has_window,
               bool has_camera,
@@ -89,12 +102,74 @@ private:
     AVPixelFormat dest_window_fmt_;
 };
 
-
-
-class common
-{
+class mux_option{
 public:
-    common();
+    mux_option() = default;
+    ~mux_option() = default;
+
+    bool has_audio() const;
+    void setHas_audio(bool has_audio);
+
+    bool mux_frame() const;
+    void setMux_frame(bool mux_frame);
+
+    std::string save_file_path() const;
+    void setSave_file_path(const std::string &save_file_path);
+
+    const grab_option& grab_option() const;
+    void setGrab_option(const class grab_option &grab_option);
+
+    std::function<void (AVFrame *)> video_callback() const;
+    void setVideo_callback(const std::function<void (AVFrame *)> &video_callback);
+
+    std::function<void (AVFrame *)> camera_callback() const;
+    void setCamera_callback(const std::function<void (AVFrame *)> &camera_callback);
+
+    std::function<void ()> stop_callback() const;
+    void setStop_callback(const std::function<void ()> &stop_callback);
+
+private:
+    bool has_audio_;
+    bool mux_frame_;
+    std::string save_file_path_;
+    class grab_option grab_option_;
+    std::function<void(AVFrame*)> video_callback_;
+    std::function<void(AVFrame*)> camera_callback_;
+    std::function<void()> stop_callback_;
 };
+
+class framequeue{
+public:
+    framequeue() = default;
+    ~framequeue() = default;
+
+    void put(AVFrame*);
+
+    AVFrame* get();
+
+    bool empty();
+
+    long long getFrame_count() const;
+    void setFrame_count(long long frame_count);
+
+    long long getFrame_size() const;
+    void setFrame_size(long long frame_size);
+
+private:
+    long long frame_count_;
+    long long frame_size_;
+
+    std::queue<AVFrame*> frame_queue_;
+    std::mutex queue_mtx_;
+    std::condition_variable queue_cond_not_full_;
+    std::condition_variable queue_cond_not_empty_;
+
+    static constexpr long long max_queue_size = 200;
+
+};
+
+void show_codec_context_information(AVCodec* codec, AVCodecContext* ctx, int idx);
+
+void show_frame_information(AVFrame*  frame);
 
 #endif // COMMON_H

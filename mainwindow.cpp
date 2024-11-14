@@ -10,9 +10,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    recoder_.reset(new recoder());
-    record_option ro;
-    ro.init(true, false, false, {100, 1});
+    recoder_.reset(new graber());
+    grab_option ro;
+    ro.init(true, false, false, {25, 1});
 
     auto video_callback = [this](AVFrame* f){
         QImage image = QImage(f->data[0], f->width, f->height, QImage::Format::Format_RGB888);
@@ -66,7 +66,7 @@ void MainWindow::SLOT_record_stopped()
 
 void MainWindow::on_pb_begin_clicked()
 {
-    recoder_->record();
+    recoder_->grab();
 }
 
 void MainWindow::on_pushButton_clicked()
