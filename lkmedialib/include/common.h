@@ -130,7 +130,7 @@ public:
 
 private:
     bool has_audio_;
-    bool mux_frame_;
+    bool mux_frame_; // 标记是否将流写入到save_file_path当中
     std::string save_file_path_;
     class grab_option grab_option_;
     std::function<void(AVFrame*)> video_callback_;

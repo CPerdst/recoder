@@ -64,6 +64,13 @@ public:
      */
 
     virtual void stop() = 0;
+
+    virtual int getCamera_width() = 0;
+    virtual void setCamera_width(int value) = 0;
+
+    virtual int getCamera_height() = 0;
+    virtual void setCamera_height(int value) = 0;
+
 };
 
 /**
@@ -86,8 +93,14 @@ public:
     void stop() override;
 
 
+    int getCamera_width() override;
+    void setCamera_width(int value) override;
+
+    int getCamera_height() override;
+    void setCamera_height(int value) override;
+
 private:
-    grab_option record_option_; // 指定录制的模式（包含窗口，包含摄像头，包含音频, 录制速率）
+    grab_option grab_option_; // 指定录制的模式（包含窗口，包含摄像头，包含音频, 录制速率）
 
     bool record_flag_;
 
@@ -115,6 +128,12 @@ private:
     bool thread_exited_flag_;
     std::mutex thread_exited_flag_mtx;
     std::condition_variable thread_exited_flag_cond_;
+
+    int camera_width_;
+    int camera_height_;
+    std::mutex height_width_mtx_;
+    std::condition_variable height_width_cond_;
+    bool can_get_height_width_;
 
     static constexpr int max_record_camera_width =  1920;
     static constexpr int max_record_camera_height =  1080;

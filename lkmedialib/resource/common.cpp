@@ -206,6 +206,7 @@ AVFrame *framequeue::get()
     if(frame_count_ == 0){
         queue_cond_not_empty_.wait(lock, [this](){return frame_count_ > 0;});
     }
+//    qDebug() << frame_count_;
     auto ele = frame_queue_.front();
     frame_queue_.pop();
     frame_count_--;

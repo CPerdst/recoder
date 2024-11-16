@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1878</width>
-    <height>1212</height>
+    <width>2209</width>
+    <height>1476</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,10 +17,10 @@
    <widget class="QLabel" name="lb_show">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>70</y>
-      <width>551</width>
-      <height>221</height>
+      <x>0</x>
+      <y>260</y>
+      <width>481</width>
+      <height>301</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -33,8 +33,8 @@
    <widget class="QPushButton" name="pb_begin">
     <property name="geometry">
      <rect>
-      <x>100</x>
-      <y>330</y>
+      <x>80</x>
+      <y>870</y>
       <width>80</width>
       <height>20</height>
      </rect>
@@ -46,8 +46,8 @@
    <widget class="QPushButton" name="pushButton">
     <property name="geometry">
      <rect>
-      <x>70</x>
-      <y>380</y>
+      <x>280</x>
+      <y>860</y>
       <width>99</width>
       <height>28</height>
      </rect>
@@ -59,8 +59,8 @@
    <widget class="QLabel" name="lb_show2">
     <property name="geometry">
      <rect>
-      <x>170</x>
-      <y>30</y>
+      <x>520</x>
+      <y>260</y>
       <width>1681</width>
       <height>1151</height>
      </rect>
@@ -78,7 +78,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1878</width>
+     <width>2209</width>
      <height>26</height>
     </rect>
    </property>
