@@ -2,7 +2,7 @@
 #include "thread"
 #include "opencv2/opencv.hpp"
 #include "QDebug"
-
+#include "eventCapturer.h"
 #include "windows.h"
 
 extern "C"{
@@ -180,7 +180,7 @@ void graber::grab()
                 if(grab_option_.has_camera()){
                     if(!cap.read(mat)){
                         if(failed_read_times++ == 10){
-                            qDebug() << "截取摄像头失败";
+                            RootWarn() << "截取摄像头失败";
                         }
                         continue;
                     }
@@ -214,13 +214,13 @@ void graber::grab()
                 if(grab_option_.has_window()){
                     err = av_read_frame(window_format_context, &packet);
                     if(err < 0){
-                        qDebug() << "av_read_frame failed";
+                        RootError() << "av_read_frame failed";
                         exit(0);
                     }
                     if(packet.stream_index == videoStream->index){
                         int ret = avcodec_send_packet(codecContext, &packet);
                         if (ret < 0) {
-                            qDebug() << "Error sending packet for decoding";
+                            RootError() << "Error sending packet for decoding";
                             exit(0);
                         }
                         // 从解码器接收解码后的 frame
@@ -229,7 +229,7 @@ void graber::grab()
                             break; // 没有更多的帧或者 EOF
                         }
                         if (ret < 0) {
-                            qDebug() << "avcodec_receive_frame failed";
+                            RootError() << "avcodec_receive_frame failed";
                             exit(0);
                         }
                         sws_scale(sws_window_context,

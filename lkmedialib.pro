@@ -2,7 +2,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11
+CONFIG += c++17
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -11,10 +11,12 @@ CONFIG += c++11
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    $$PWD/lkmedialib/resource/*.cpp
+    $$PWD/lkmedialib/resource/*.cpp \
+    $$PWD/lklog/logger/*.cpp
 
 HEADERS += \
     $$PWD/lkmedialib/include/*.h \
+    $$PWD/lklog/logger/*.h \
     mainwindow.h
 
 FORMS += \
@@ -23,7 +25,8 @@ FORMS += \
 INCLUDEPATH += \
     $$PWD/library/ffmpeg-4.2.2/include \
     $$PWD/library/opencv-release/include \
-    $$PWD/lkmedialib/include
+    $$PWD/lkmedialib/include \
+    $$PWD/lklog/logger
 
 LIBS += \
     $$PWD/library/opencv-release/lib/lib*.dll.a \

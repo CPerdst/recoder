@@ -1,8 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "QDebug"
-
 extern "C"{
     #include "libavutil/pixfmt.h"
     #include "libavutil/rational.h"
@@ -13,6 +11,7 @@ extern "C"{
 #include "queue"
 #include "mutex"
 #include "condition_variable"
+#include "functional"
 
 class video_information{
 public:

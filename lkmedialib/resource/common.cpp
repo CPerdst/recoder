@@ -1,4 +1,5 @@
 #include "common.h"
+#include "eventCapturer.h"
 
 void video_information::init(AVPixelFormat fmt, int w, int h, long long bit_rate, AVRational video_rate, AVRational time_base)
 {
@@ -161,32 +162,32 @@ void grab_option::setDest_window_fmt(const AVPixelFormat &dest_window_fmt)
 }
 
 void show_codec_context_information(AVCodec* codec, AVCodecContext* ctx, int idx){
-    qDebug() << "----------CODEC CONTEXT INFO----------";
-    qDebug() << codec->long_name;
+    RootDebug() << "----------CODEC CONTEXT INFO----------";
+    RootDebug() << codec->long_name;
     if(ctx->codec_type == AVMEDIA_TYPE_AUDIO){
-        qDebug() << "Stream:        " << idx;
-        qDebug() << "Sample Format: " << av_get_sample_fmt_name(ctx->sample_fmt);
-        qDebug() << "Sample Size:   " << av_get_bytes_per_sample(ctx->sample_fmt);
-        qDebug() << "Channels:      " << ctx->channels;
-        qDebug() << "Float Output:  " << (av_sample_fmt_is_planar(ctx->sample_fmt) ? "yes" : "no");
-        qDebug() << "Sample Rate:   " << ctx->sample_rate;
-        qDebug() << "Audio TimeBase: " << av_q2d(ctx->time_base);
+        RootDebug() << "Stream:        " << idx;
+        RootDebug() << "Sample Format: " << av_get_sample_fmt_name(ctx->sample_fmt);
+        RootDebug() << "Sample Size:   " << av_get_bytes_per_sample(ctx->sample_fmt);
+        RootDebug() << "Channels:      " << ctx->channels;
+        RootDebug() << "Float Output:  " << (av_sample_fmt_is_planar(ctx->sample_fmt) ? "yes" : "no");
+        RootDebug() << "Sample Rate:   " << ctx->sample_rate;
+        RootDebug() << "Audio TimeBase: " << av_q2d(ctx->time_base);
     }else if(ctx->codec_type == AVMEDIA_TYPE_VIDEO){
-        qDebug() << "Stream:        " << idx;
-        qDebug() << "Video Format: " << av_get_pix_fmt_name(ctx->pix_fmt);
-        qDebug() << "Video Height: " << ctx->height;
-        qDebug() << "Video Width: " << ctx->width;
-        qDebug() << "Video Rate: " << av_q2d(ctx->framerate);
-        qDebug() << "Video TimeBase: " << av_q2d(ctx->time_base);
+        RootDebug() << "Stream:        " << idx;
+        RootDebug() << "Video Format: " << av_get_pix_fmt_name(ctx->pix_fmt);
+        RootDebug() << "Video Height: " << ctx->height;
+        RootDebug() << "Video Width: " << ctx->width;
+        RootDebug() << "Video Rate: " << av_q2d(ctx->framerate);
+        RootDebug() << "Video TimeBase: " << av_q2d(ctx->time_base);
     }
 }
 
 void show_frame_information(AVFrame*  frame){
-    qDebug() << "----------FRAME INFO----------";
-    qDebug() << "frame format: " << av_get_sample_fmt_name((enum AVSampleFormat)frame->format);
-    qDebug() << "frame rate: " << frame->sample_rate;
-    qDebug() << "frame channel layout: " << frame->channel_layout;
-    qDebug() << "frame channels: " << frame->channels;
+    RootDebug() << "----------FRAME INFO----------";
+    RootDebug() << "frame format: " << av_get_sample_fmt_name((enum AVSampleFormat)frame->format);
+    RootDebug() << "frame rate: " << frame->sample_rate;
+    RootDebug() << "frame channel layout: " << frame->channel_layout;
+    RootDebug() << "frame channels: " << frame->channels;
 }
 
 void framequeue::put(AVFrame *frame)

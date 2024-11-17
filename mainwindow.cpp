@@ -3,11 +3,14 @@
 #include <QDebug>
 #include <QMessageBox>
 #include "recoder.h"
+#include "QDebug"
+#include "eventCapturer.h"
 
 extern "C"{
     #include "libavcodec/avcodec.h"
     #include "libavformat/avformat.h"
     #include "libavutil/log.h"
+    #include "libswscale/swscale.h"
 }
 
 // 自定义日志回调函数
@@ -63,11 +66,6 @@ void ffmpeg_log_callback(void* ptr, int level, const char* fmt, va_list vargs) {
         qDebug().noquote() << msg;
     }
 }
-
-extern "C"{
-#include "libswscale/swscale.h"
-}
-
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
