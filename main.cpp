@@ -11,7 +11,7 @@ void lk_log_callback(std::string& str){
 void lk_log_init(){
     logger::logger::Root()->setConsoleCallback(lk_log_callback);
     logger::logger::Root()->setLevel(packer::Trace);
-    logger::logger::Root()->setLogFormater("[%level] [%s {%Y-%m-%d %H:%M:%S}]: %message");
+    logger::logger::Root()->setLogFormater("[%level] [%s {%Y-%m-%d %H:%M:%S}] [%filepath:%line]: %message");
 }
 
 int main(int argc, char *argv[])

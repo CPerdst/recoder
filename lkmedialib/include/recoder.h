@@ -15,11 +15,13 @@ public:
                       bool has_audio,
                       bool mux_frame,
                       AVRational frame_rate,
-                      std::function<void (AVFrame *)> video_callback,
-                      std::function<void (AVFrame *)> camera_callback,
-                      std::function<void ()> stop_callback) = 0;
+                      std::function<void (AVFrame *)> video_callback = nullptr,
+                      std::function<void (AVFrame *)> camera_callback = nullptr,
+                      std::function<void ()> stop_callback = nullptr) = 0;
 
     virtual void record() = 0;
+
+    virtual void stop() = 0;
 
     virtual void set_video_callback(std::function<void(AVFrame*)> = nullptr) = 0;
 
@@ -41,11 +43,13 @@ public:
               bool has_audio,
               bool mux_frame,
               AVRational frame_rate,
-              std::function<void (AVFrame *)> video_callback,
-              std::function<void (AVFrame *)> camera_callback,
-              std::function<void ()> stop_callback) override;
+              std::function<void (AVFrame *)> video_callback = nullptr,
+              std::function<void (AVFrame *)> camera_callback = nullptr,
+              std::function<void ()> stop_callback = nullptr) override;
 
     void record() override;
+
+    void stop() override;
 
     void set_video_callback(std::function<void(AVFrame*)> = nullptr) override;
 
@@ -63,6 +67,11 @@ private:
     framequeue audio_frame_queue_;
 
     graber graber_;
+
+    bool recording_;
+    bool consumer_exit_flag_;
+    std::mutex consumer_exit_mtx_;
+    std::condition_variable consumer_exit_cond_;
 };
 
 #endif // FRAMEMUXER_H

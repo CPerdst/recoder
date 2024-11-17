@@ -12,6 +12,8 @@ extern "C"{
 #include "mutex"
 #include "condition_variable"
 #include "functional"
+#include "eventCapturer.h"
+
 
 class video_information{
 public:
@@ -163,12 +165,14 @@ private:
     std::condition_variable queue_cond_not_full_;
     std::condition_variable queue_cond_not_empty_;
 
-    static constexpr long long max_queue_size = 200;
+    static constexpr long long max_queue_size = 2;
 
 };
 
 void show_codec_context_information(AVCodec* codec, AVCodecContext* ctx, int idx);
 
-void show_frame_information(AVFrame*  frame);
+void show_frame_information(AVFrame*  frame, AVMediaType type);
+
+void err2str(const char* err_perfix, int errnum);
 
 #endif // COMMON_H

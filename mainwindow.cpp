@@ -98,7 +98,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     recoder_->init("C:\\Users\\l1Akr\\Documents\\QtApp\\build-lkmedialib-Desktop_Qt_5_12_10_MinGW_32_bit-Debug\\debug\\output.mp4",
                    true,
-                   false,
+                   true,
                    false,
                    false,
                    {25, 1},
@@ -139,7 +139,7 @@ void MainWindow::SLOT_receive_window_image(QImage image)
 
 void MainWindow::SLOT_record_stopped()
 {
-    QMessageBox::information(this, QString("录制完毕"), QString("感谢使用我们的产品"));
+    QMessageBox::information(this, QString("录制完毕"), QString("感谢您的使用"));
 }
 
 void MainWindow::on_pb_begin_clicked()

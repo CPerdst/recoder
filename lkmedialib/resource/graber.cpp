@@ -47,27 +47,29 @@ void graber::grab()
             int failed_read_times = 0;
             int screen_width = GetSystemMetrics(SM_CXSCREEN);
             int screen_height = GetSystemMetrics(SM_CYSCREEN);
+            int frame_index_camera = 0;
+            int frame_index_window = 0;
             const uint8_t* mat_data[4] = {0, 0, 0, 0};
             int mat_linesize[4] = {0, 0, 0, 0};
             int really_camera_frame_height = 0;
             int really_camera_frame_width = 0;
             AVFrame* frameDST = av_frame_alloc();
-            SwsContext* sws_camera_context;
+            SwsContext* sws_camera_context = nullptr;
             bool camera_need_scale = grab_option_.getDest_camera_fmt() != AV_PIX_FMT_BGR24;
-            bool window_need_scale = grab_option_.getDest_window_fmt() != AV_PIX_FMT_BGR24;
+            bool window_need_scale = grab_option_.getDest_window_fmt() != AV_PIX_FMT_BGRA;
             cv::Mat mat;
             cv::VideoCapture cap;
 
             AVFrame* frameWin = av_frame_alloc();
             AVFrame* frameWinRGB = av_frame_alloc();
             AVPacket packet;
-            AVInputFormat* window_input_format;
-            AVFormatContext* window_format_context;
-            AVStream* videoStream = NULL;
-            AVCodecParameters* codecpar;
-            AVCodec* codec;
-            AVCodecContext* codecContext;
-            SwsContext* sws_window_context;
+            AVInputFormat* window_input_format = nullptr;
+            AVFormatContext* window_format_context = nullptr;
+            AVStream* videoStream = nullptr;
+            AVCodecParameters* codecpar = nullptr;
+            AVCodec* codec = nullptr;
+            AVCodecContext* codecContext = nullptr;
+            SwsContext* sws_window_context = nullptr;
 
             if(grab_option_.has_window()){
                 avdevice_register_all();
@@ -105,27 +107,25 @@ void graber::grab()
                     qDebug() << "Failed to open codec";
                     exit(0);
                 }
-                av_image_alloc(frameWin->data,
-                               frameWin->linesize,
-                               screen_width,
-                               screen_height,
-                               AV_PIX_FMT_BGRA,
-                               32);
-                av_image_alloc(frameWinRGB->data,
-                               frameWinRGB->linesize,
-                               screen_width,
-                               screen_height,
-                               AV_PIX_FMT_RGB24,
-                               32);
-                sws_window_context = sws_getContext(screen_width, screen_height,
-                                                    AV_PIX_FMT_BGRA,
-                                                    screen_width,screen_height,
-                                                    AV_PIX_FMT_RGB24,
-                                                    SWS_BILINEAR, nullptr, nullptr, nullptr);
+                // 设置frameWin的参数并申请空间
+                frameWin->height = screen_height;
+                frameWin->width = screen_width;
+                frameWin->format = AV_PIX_FMT_BGRA;
+//                av_frame_get_buffer(frameWin, 32);
+                // 设置frameWinRGB的参数并申请空间
+                frameWinRGB->height = screen_height;
+                frameWinRGB->width = screen_width;
+                frameWinRGB->format = AV_PIX_FMT_RGB24;
+                av_frame_get_buffer(frameWinRGB, 32);
+                if(window_need_scale)
+                    sws_window_context = sws_getContext(screen_width, screen_height,
+                                                        AV_PIX_FMT_BGRA,
+                                                        screen_width,screen_height,
+                                                        grab_option_.getDest_window_fmt(),
+                                                        SWS_BILINEAR, nullptr, nullptr, nullptr);
                 show_codec_context_information(codec, codecContext, videoStream->index);
-                qDebug() << "asd";
+                RootTrace() << "grabber has initialized window related resource";
             }
-
             if(grab_option_.has_camera()){
                 cap.open(0);
                 if(!cap.isOpened()){
@@ -172,9 +172,8 @@ void graber::grab()
                                                 really_camera_frame_height,
                                                 grab_option_.getDest_camera_fmt(),
                                                 SWS_BILINEAR, nullptr, nullptr, nullptr);
+                RootTrace() << "grabber has initialized camera related resource";
             }
-
-            int frame_index_camera = 0;
 
             while(record_flag_){
                 if(grab_option_.has_camera()){
@@ -209,13 +208,14 @@ void graber::grab()
                     }
                     frameDST->pts = frame_index_camera++;
                     if(camera_callback_) camera_callback_(frameDST);
-//                    av_frame_unref(frameDST);
                 }
                 if(grab_option_.has_window()){
                     err = av_read_frame(window_format_context, &packet);
                     if(err < 0){
-                        RootError() << "av_read_frame failed";
-                        exit(0);
+                        err2str("av_read_frame failed with: ", err);
+//                        exit(0);
+                        av_packet_unref(&packet);
+                        continue;
                     }
                     if(packet.stream_index == videoStream->index){
                         int ret = avcodec_send_packet(codecContext, &packet);
@@ -224,26 +224,32 @@ void graber::grab()
                             exit(0);
                         }
                         // 从解码器接收解码后的 frame
-                        ret = avcodec_receive_frame(codecContext, frameWin);
-                        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-                            break; // 没有更多的帧或者 EOF
+                        while(ret >= 0){
+                            ret = avcodec_receive_frame(codecContext, frameWin);
+                            if (ret == AVERROR(EAGAIN)) {
+                                break;
+                            }
+                            if(ret == AVERROR_EOF){
+                                break;
+                            }
+                            if (ret < 0) {
+                                RootError() << "avcodec_receive_frame failed";
+                                exit(0);
+                            }
+                            if(window_need_scale)
+                                sws_scale(sws_window_context,
+                                          frameWin->data,
+                                          frameWin->linesize,
+                                          0, codecContext->height,
+                                          frameWinRGB->data,
+                                          frameWinRGB->linesize);
+                            frameWinRGB->pts = frame_index_window++;
+                            if(video_callback_) video_callback_(frameWinRGB);
+                            av_frame_unref(frameWin);
                         }
-                        if (ret < 0) {
-                            RootError() << "avcodec_receive_frame failed";
-                            exit(0);
-                        }
-                        sws_scale(sws_window_context,
-                                  frameWin->data,
-                                  frameWin->linesize,
-                                  0, codecContext->height,
-                                  frameWinRGB->data,
-                                  frameWinRGB->linesize);
-                        frameWinRGB->width = codecContext->width;
-                        frameWinRGB->height = codecContext->height;
-                        frameWinRGB->pts = AV_NOPTS_VALUE;
-                        if(video_callback_) video_callback_(frameWinRGB);
-                        av_packet_unref(&packet);
+
                     }
+                    av_packet_unref(&packet);
                 }
 
                 AVRational frame_rate = grab_option_.getFrame_rate();
@@ -260,12 +266,14 @@ void graber::grab()
                 av_frame_free(&frameWinRGB);
                 avformat_close_input(&window_format_context);
                 avcodec_free_context(&codecContext);
+                if(window_need_scale) sws_freeContext(sws_window_context);
             }
 
             if(grab_option_.has_camera()){
                 sws_freeContext(sws_camera_context);
                 av_frame_free(&frameDST);
                 cap.release(); // 其实在cap析构的时候，也会自动调用release的，所以这里可以不用release
+                if(camera_need_scale) sws_freeContext(sws_camera_context);
             }
 
             // 设置退出标志
@@ -289,6 +297,7 @@ void graber::stop()
         });
         thread_exited_flag_ = false;
         if(stop_callback_) stop_callback_();
+        RootTrace() << "grabber stopped";
     }
 }
 

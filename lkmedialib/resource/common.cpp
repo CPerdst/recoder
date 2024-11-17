@@ -162,32 +162,41 @@ void grab_option::setDest_window_fmt(const AVPixelFormat &dest_window_fmt)
 }
 
 void show_codec_context_information(AVCodec* codec, AVCodecContext* ctx, int idx){
-    RootDebug() << "----------CODEC CONTEXT INFO----------";
-    RootDebug() << codec->long_name;
+    RootTrace() << "----------CODEC CONTEXT INFO----------";
+    RootTrace() << codec->long_name;
     if(ctx->codec_type == AVMEDIA_TYPE_AUDIO){
-        RootDebug() << "Stream:        " << idx;
-        RootDebug() << "Sample Format: " << av_get_sample_fmt_name(ctx->sample_fmt);
-        RootDebug() << "Sample Size:   " << av_get_bytes_per_sample(ctx->sample_fmt);
-        RootDebug() << "Channels:      " << ctx->channels;
-        RootDebug() << "Float Output:  " << (av_sample_fmt_is_planar(ctx->sample_fmt) ? "yes" : "no");
-        RootDebug() << "Sample Rate:   " << ctx->sample_rate;
-        RootDebug() << "Audio TimeBase: " << av_q2d(ctx->time_base);
+        RootTrace() << "Stream:        " << idx;
+        RootTrace() << "Sample Format: " << av_get_sample_fmt_name(ctx->sample_fmt);
+        RootTrace() << "Sample Size:   " << av_get_bytes_per_sample(ctx->sample_fmt);
+        RootTrace() << "Channels:      " << ctx->channels;
+        RootTrace() << "Float Output:  " << (av_sample_fmt_is_planar(ctx->sample_fmt) ? "yes" : "no");
+        RootTrace() << "Sample Rate:   " << ctx->sample_rate;
+        RootTrace() << "Audio TimeBase: " << av_q2d(ctx->time_base);
     }else if(ctx->codec_type == AVMEDIA_TYPE_VIDEO){
-        RootDebug() << "Stream:        " << idx;
-        RootDebug() << "Video Format: " << av_get_pix_fmt_name(ctx->pix_fmt);
-        RootDebug() << "Video Height: " << ctx->height;
-        RootDebug() << "Video Width: " << ctx->width;
-        RootDebug() << "Video Rate: " << av_q2d(ctx->framerate);
-        RootDebug() << "Video TimeBase: " << av_q2d(ctx->time_base);
+        RootTrace() << "Stream:        " << idx;
+        RootTrace() << "Video Format: " << av_get_pix_fmt_name(ctx->pix_fmt);
+        RootTrace() << "Video Height: " << ctx->height;
+        RootTrace() << "Video Width: " << ctx->width;
+        RootTrace() << "Video Rate: " << av_q2d(ctx->framerate);
+        RootTrace() << "Video TimeBase: " << av_q2d(ctx->time_base);
     }
 }
 
-void show_frame_information(AVFrame*  frame){
-    RootDebug() << "----------FRAME INFO----------";
-    RootDebug() << "frame format: " << av_get_sample_fmt_name((enum AVSampleFormat)frame->format);
-    RootDebug() << "frame rate: " << frame->sample_rate;
-    RootDebug() << "frame channel layout: " << frame->channel_layout;
-    RootDebug() << "frame channels: " << frame->channels;
+void show_frame_information(AVFrame*  frame, AVMediaType type){
+
+    if(type == AVMEDIA_TYPE_VIDEO){
+        RootTrace() << "----------FRAME INFO----------";
+        RootTrace() << "frame pix format: " << av_get_pix_fmt_name((AVPixelFormat)frame->format);
+        RootTrace() << "frame width/height: " << frame->width << "/" << frame->height;
+        RootTrace() << "frame pts: " << frame->pts;
+    }else if(type == AVMEDIA_TYPE_AUDIO){
+        RootTrace() << "----------FRAME INFO----------";
+        RootTrace() << "frame format: " << av_get_sample_fmt_name((enum AVSampleFormat)frame->format);
+        RootTrace() << "frame rate: " << frame->sample_rate;
+        RootTrace() << "frame channel layout: " << frame->channel_layout;
+        RootTrace() << "frame channels: " << frame->channels;
+    }
+
 }
 
 void framequeue::put(AVFrame *frame)
@@ -198,6 +207,7 @@ void framequeue::put(AVFrame *frame)
     }
     frame_queue_.push(frame);
     frame_count_++;
+    RootTrace() << "put a frame, now has " << frame_count_ << " frames";
     queue_cond_not_empty_.notify_one();
 }
 
@@ -211,6 +221,7 @@ AVFrame *framequeue::get()
     auto ele = frame_queue_.front();
     frame_queue_.pop();
     frame_count_--;
+    RootTrace() << "get a frame, now has " << frame_count_ << " frames";
     queue_cond_not_full_.notify_one();
     return ele;
 }
@@ -309,4 +320,11 @@ std::function<void ()> mux_option::stop_callback() const
 void mux_option::setStop_callback(const std::function<void ()> &stop_callback)
 {
     stop_callback_ = stop_callback;
+}
+
+void err2str(const char* err_perfix, int errnum)
+{
+    char errstr[AV_ERROR_MAX_STRING_SIZE];
+    av_strerror(errnum, errstr, AV_ERROR_MAX_STRING_SIZE);
+    RootError() << err_perfix << errstr;
 }
